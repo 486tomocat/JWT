@@ -1,12 +1,33 @@
 <script setup lang="ts">
+import { login } from '@/net';
 import { User, Lock } from '@element-plus/icons-vue'
-import {reactive} from "vue";
+import {reactive, ref} from "vue";
+
+const formRef = ref()
 
 const form = reactive({
   username:'',
   password:'',
   remember:false
 })
+
+const rule = {
+  username:[
+    {required: true, message: '请输入用户名'}
+  ],
+  password:[
+    {required: true, message: '请输入密码'}
+  ]
+}
+
+function userLogin(){
+  formRef.value.validate((valid) => {
+    if(valid) {
+      login(form.username, form.password, form.remember, () => {})
+    }
+  })
+}
+
 </script>
 
 <template>
@@ -16,7 +37,7 @@ const form = reactive({
       <div style="font-size: 14px;color: grey">进入之前输入用户名和密码</div>
     </div>
     <div style="margin-top: 50px">
-      <el-form v-model="form">
+      <el-form v-model="form" :rules="rule" ref="formRef">
         <el-form-item>
           <el-input v-model="form.username"maxlength="11"type="text"placeholder="用户名/邮箱">
             <template #prefix>
@@ -44,7 +65,7 @@ const form = reactive({
       </el-form>
     </div>
     <div style="margin-top: 40px">
-      <el-button style="width: 270px" type="success" plain>立即登录</el-button>
+      <el-button @click="" style="width: 270px" type="success" plain>立即登录</el-button>
     </div>
     <el-divider>
       <span style="font-size: 13px;color: grey">没有账号</span>
