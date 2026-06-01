@@ -8,8 +8,8 @@ const defaultFailure = (message, code, url) => {
     ElMessage.warning(message)
 }
 
-const defaultError = (err) =>{
-    console.warn(err)
+const defaultError = (err) => {
+    console.error(err)
     ElMessage.warning('发生了一些错误，请联系管理员')
 }
 
@@ -36,10 +36,10 @@ function storeAccessToken(token, remember, expire){
 
 function deleteAccessToken(){
     localStorage.removeItem(authItemName)
-    sessionStorage.getItem(authItemName)
+    sessionStorage.removeItem(authItemName)
 }
 
-function internalPost(url, data, header, success, failure, error = defaultError()){
+function internalPost(url, data, header, success, failure, error = defaultError){
     axios.post(url, data, { headers: header }).then(({data}) =>{
         if(data.code === 200){
             success(data.data)
@@ -49,7 +49,7 @@ function internalPost(url, data, header, success, failure, error = defaultError(
     }).catch(err => error(err))
 }
 
-function internalGet(url, header, success, failure, error = defaultError()){
+function internalGet(url, header, success, failure, error = defaultError){
     axios.post(url, { headers: header }).then(({data}) =>{
         if(data.code === 200){
             success(data.data)
@@ -59,14 +59,14 @@ function internalGet(url, header, success, failure, error = defaultError()){
     }).catch(err => error(err))
 }
 
-function login(username, password, remember, success, failure = defaultFailure()){
+function login(username, password, remember, success, failure = defaultFailure){
     internalPost('/api/auth/login', {
         username: username,
         password: password,
     }, {
         'Content-Type': 'application/x-www-form-urlencoded'
     },(data) =>{
-        storeAccessToken(remember, data.token, data.expire)
+        storeAccessToken(data.token, remember,  data.expire)
         ElMessage.success(`登录成功,欢迎${data.username} 来到系统`)
         success(data)
     }, failure)
