@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { login } from '@/net';
+import router from '@/router';
 import { User, Lock } from '@element-plus/icons-vue'
 import {reactive, ref} from "vue";
 
@@ -24,7 +25,8 @@ function userLogin(){
   console.info("sadada")
   formRef.value.validate((valid) => {
     if(valid) {
-      login(form.username, form.password, form.remember, () => {})
+      login(form.username, form.password, form.remember,
+          () => router.push('/index'))
     }
   })
 }
