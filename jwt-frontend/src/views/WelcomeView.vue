@@ -14,8 +14,12 @@
       <div style="margin-top: 5px">随时访问</div>
 
     </div>
-    <div class="right-card">
-      <router-view/>
+    <div class="right-card" >
+      <router-view v-slot="{ Component}">
+        <transition name="el-fade-in-linear"  mode="out-in">
+          <component :is="Component"/>
+        </transition>
+      </router-view>
     </div>
   </div>
 </template>

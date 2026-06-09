@@ -42,7 +42,7 @@ function userLogin(){
     <div style="margin-top: 50px">
       <el-form :model="form" :rules="rule" ref="formRef">
         <el-form-item prop="username">
-          <el-input v-model="form.username" maxlength="11" type="text"placeholder="用户名/邮箱">
+          <el-input v-model="form.username" maxlength="11" type="text" placeholder="用户名/邮箱">
             <template #prefix>
               <el-icon><User /></el-icon>
             </template>
@@ -74,7 +74,7 @@ function userLogin(){
       <span style="font-size: 13px;color: grey">没有账号</span>
     </el-divider>
     <div>
-      <el-button style="width: 270px" type="warning" plain>立即注册</el-button>
+      <el-button @click="router.push('/register')" style="width: 270px" type="warning" plain>立即注册</el-button>
     </div>
 
 
