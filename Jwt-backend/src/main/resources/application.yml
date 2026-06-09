@@ -1,4 +1,21 @@
 spring:
+  mail:
+    host: smtp.163.com
+    port: 465
+    username: tomoWeb@163.com
+    password: YPvaDxmVUSQ5MbQ5
+    properties:
+      mail:
+        smtp:
+          ssl:
+            enable: true
+          auth: true
+  rabbitmq:
+    addresses: localhost
+    username: admin
+    password: admin
+    virtual-host: /
+
   security:
     filter:
       order: -100
