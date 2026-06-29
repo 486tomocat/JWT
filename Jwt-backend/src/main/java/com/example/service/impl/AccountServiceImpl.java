@@ -111,7 +111,7 @@ public class AccountServiceImpl extends ServiceImpl<AccountMapper, Account> impl
 
     private boolean verifyLimit(String ip){
         String key = Const.VERIFY_EMAIL_DATA + ip;
-        return utils.limitOnceCheck(key, 5);//每5秒可发送一次
+        return utils.limitOnceCheck(key, 60);//每5秒可发送一次
     }
 
 
