@@ -19,6 +19,10 @@ public class CorsFilter  extends HttpFilter {
     protected void doFilter(HttpServletRequest request,
                             HttpServletResponse response, FilterChain chain) throws IOException, ServletException{
         this.addCorsHeader(request, response);
+        if ("OPTIONS".equals(request.getMethod())) {
+            response.setStatus(HttpServletResponse.SC_OK);
+            return;
+        }
         chain.doFilter(request, response);
     }
 

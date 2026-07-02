@@ -124,6 +124,10 @@ public class AccountServiceImpl extends ServiceImpl<AccountMapper, Account> impl
                 .one();
 
     }
+    @Override
+    public Account findAccountById(int id){
+        return this.query().eq("id", id).one();
+    }
 
     private boolean existAccountByEmail(String email){
         return this.baseMapper.exists(Wrappers.<Account>query().eq("email", email));

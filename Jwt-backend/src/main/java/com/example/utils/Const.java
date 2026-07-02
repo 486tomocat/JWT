@@ -12,4 +12,6 @@ public class Const {
     public static final String FLOW_LIMIT_COUNTER = "flow:counter";
     public static final String FLOW_LIMIT_BLOCK = "flow:block";
 
+    public static final String ATTR_USER_ID = "id";
+
 }
