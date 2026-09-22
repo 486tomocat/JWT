@@ -1,4 +1,4 @@
-package com.example.entity.vo.reponses;
+package com.example.entity.vo.response;
 
 import lombok.Data;
 
@@ -10,5 +10,4 @@ public class AccountVO {
     String email;
     String role;
     Date registerTime;
-
 }
