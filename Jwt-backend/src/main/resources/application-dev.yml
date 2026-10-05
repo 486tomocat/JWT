@@ -1,0 +1,67 @@
+# ==================== 开发环境 ====================
+# 启动：mvn spring-boot:run（默认就是 dev，见 application.yml 的 spring.profiles.active）
+# 本文件里的 ${VAR:默认值} 都能被 application-local.yml 或环境变量覆盖。
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/template
+    username: root
+    password: ${DB_PASSWORD:123456}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  mail:
+    # 授权码的真实值在 application-local.yml（不进版本库）
+    password: ${MAIL_PASSWORD:}
+
+  rabbitmq:
+    password: ${RABBITMQ_PASSWORD:admin}
+
+  security:
+    jwt:
+      # 真实密钥同样在 application-local.yml
+      key: ${JWT_KEY:}
+
+  # 全局限流：period 秒内最多 limit 次请求，超出封禁 block 秒
+  web:
+    flow:
+      period: 3
+      limit: 10
+      block: 30
+
+  # Elasticsearch：帖子全文搜索。
+  # 本机服务端已关掉安全认证（config/elasticsearch.yml 里 xpack.security.enabled: false），
+  # 所以直接 http 连，不需要账号密码。
+  elasticsearch:
+    uris: http://127.0.0.1:9200
+    connection-timeout: 5s
+    socket-timeout: 30s
+
+# ==================== Swagger / OpenAPI ====================
+# 文档页：http://localhost:8081/swagger-ui/index.html
+# 生产环境已在 application-prod.yml 里整体关闭 —— 不该把接口结构（尤其管理后台的）暴露出去。
+springdoc:
+  swagger-ui:
+    tags-sorter: alpha        # 分组按字母排，接口多了好找
+    operations-sorter: alpha
+    display-request-duration: true
+
+# ==================== MinIO 对象存储 ====================
+# 账号密码在 application-local.yml（不进版本库）。
+# 桶不存在时程序会自动创建并设为公开读，不用手工去控制台建。
+minio:
+  endpoint: http://127.0.0.1:9000
+  bucket: forum
+  access-key: ${MINIO_ACCESS_KEY:}
+  secret-key: ${MINIO_SECRET_KEY:}
+
+# ==================== 服务端口 ====================
+# 本机 8080 会被 Steam 的 steamwebhelper.exe（CEF remote debugging）长期占用，
+# 导致后端起不来，因此固定改用 8081。
+# 前端 jwt-frontend/vite.config.js 里的 /api 代理已同步指向 8081。
+server:
+  port: 8081
+
+logging:
+  level:
+    # 开发时把自己的业务日志打开；MyBatis 的 SQL 日志需要时再放开下一行
+    com.example: debug
+    # com.example.mapper: debug

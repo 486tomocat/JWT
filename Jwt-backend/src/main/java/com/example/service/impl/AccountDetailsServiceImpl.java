@@ -26,10 +26,16 @@ public class AccountDetailsServiceImpl extends ServiceImpl<AccountDetailsMapper,
     @Override
     public boolean saveAccountDetails(int id, DetailsSaveVO vo) {
         Account account = service.findAccountByNameOrEmail(vo.getUsername());
-        // 用户名没被别人占用才允许改。
-        // 原来的写法是 service.update().eq(...).set(...) 后面缺了终结方法 .update()，
-        // 那串条件只是构造了一个 Wrapper 对象，SQL 从来没有执行过 —— 改用户名一直是无效操作。
-        if (account == null || !Objects.equals(account.getId(), id)) {
+        // 两种情况放行：
+        //   account == null                     → 这个用户名没人用
+        //   account.getId() 就是自己             → 用户没改名（或改成了自己现在的名字）
+        // 只有「用户名被**别人**占用」才拒绝。
+        //
+        // ⚠️ 这里踩过两个坑，都来自参考实现：
+        //   1) 下面 service.update()... 链式调用原来漏了终结方法 .update()，SQL 从未执行；
+        //   2) 判断条件原来写成 !Objects.equals(...)，导致「用户名被自己占用」时返回 false
+        //      —— 也就是**只要不改用户名，整个表单必然保存失败**。
+        if (account == null || Objects.equals(account.getId(), id)) {
             service.update()
                     .eq("id", id)
                     .set("username", vo.getUsername())

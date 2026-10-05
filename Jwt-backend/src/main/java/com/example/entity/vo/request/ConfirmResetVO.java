@@ -8,9 +8,9 @@ import org.hibernate.validator.constraints.Length;
 @Data
 @AllArgsConstructor
 public class ConfirmResetVO {
-    @Email
+    @Email(message = "邮箱格式不正确")
     String email;
-    @Length(max = 6,min = 6)
-    String code;
 
+    @Length(min = 6, max = 6, message = "验证码为 6 位数字")
+    String code;
 }

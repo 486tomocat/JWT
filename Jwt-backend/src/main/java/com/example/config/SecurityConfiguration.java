@@ -44,6 +44,9 @@ public class SecurityConfiguration {
         return http
                 .authorizeHttpRequests(conf -> conf
                         .requestMatchers("/api/auth/**", "/error").permitAll()
+                        // Swagger 文档页与 JSON：不放行会被 anyRequest() 拦成 401
+                        .requestMatchers("/swagger-ui/**", "/swagger-ui.html",
+                                "/v3/api-docs/**", "/v3/api-docs.yaml").permitAll()
                         // 管理后台需要 admin 角色（hasRole 会自动补 ROLE_ 前缀）
                         .requestMatchers("/api/admin/**").hasRole(Const.ROLE_ADMIN)
                         // 其余所有接口都必须登录（user 或 admin）
@@ -51,6 +54,9 @@ public class SecurityConfiguration {
                 )
                 .formLogin(conf -> conf
                         .loginProcessingUrl("/api/auth/login")
+                        // 登录凭据是邮箱，不是用户名 —— 不改这里的话，
+                        // Spring Security 会去表单里找 username 字段，永远取不到值
+                        .usernameParameter("email")
                         .failureHandler(this::onAuthenticationFailure)
                         .successHandler(this::onAuthenticationSuccess)
                 )
@@ -112,7 +118,16 @@ public class SecurityConfiguration {
                                         HttpServletResponse response,
                                         AuthenticationException exception) throws IOException {
         response.setContentType("application/json;charset=utf-8");
-        response.getWriter().write(RestBean.unauthorized(exception.getMessage()).asJsonString());
+
+        // 反查一次库，把「邮箱没注册」和「密码错了」分开提示。
+        // 教科书做法是统一提示以防用户名枚举，但本站的用户名/邮箱在论坛里本来就公开，枚举没有意义，
+        // 而用户更常遇到的是「忘了自己改过什么」—— 明确告诉他比含糊更有用。
+        String email = request.getParameter("email");
+        boolean exists = email != null && !email.isBlank()
+                && service.findAccountByNameOrEmail(email.trim()) != null;
+
+        String message = exists ? "密码错误，请重新输入" : "该邮箱尚未注册";
+        response.getWriter().write(RestBean.unauthorized(message).asJsonString());
     }
 
     public void onAccessDeny(HttpServletRequest request,

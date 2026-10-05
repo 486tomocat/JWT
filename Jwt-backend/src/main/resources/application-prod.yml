@@ -1,0 +1,37 @@
+# ==================== 生产环境 ====================
+# 启动：java -jar app.jar --spring.profiles.active=prod
+#
+# ⚠️ 本文件【不允许】出现任何明文密钥：全部从环境变量读。
+#    故意不给默认值 —— 缺了就启动失败，宁可起不来，也不要静默用上一个弱密钥。
+spring:
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  mail:
+    password: ${MAIL_PASSWORD}
+
+  rabbitmq:
+    password: ${RABBITMQ_PASSWORD}
+
+  security:
+    jwt:
+      key: ${JWT_KEY}
+
+# ==================== 生产环境关闭接口文档 ====================
+# Swagger 页面默认是公开可访问的，而本项目它还会把 /api/admin/** 的接口结构一并展示。
+# 生产环境不该暴露这些，所以整个关掉；开发环境（application-dev.yml）保持开启。
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
+server:
+  port: ${SERVER_PORT:8081}
+
+logging:
+  level:
+    root: info

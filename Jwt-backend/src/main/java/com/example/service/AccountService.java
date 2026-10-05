@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.example.entity.dto.Account;
 
 import com.example.entity.vo.request.AccountSaveVO;
+import com.example.entity.vo.request.ChangePasswordVO;
+import com.example.entity.vo.request.ModifyEmailVO;
 import com.example.entity.vo.request.ConfirmResetVO;
 import com.example.entity.vo.request.EmailRegisterVO;
 import com.example.entity.vo.request.EmailResetVO;
@@ -28,4 +30,10 @@ public interface AccountService extends IService<Account>, UserDetailsService {
 
     /** 管理后台：直接重置某个用户的密码（不需要原密码） */
     void modifyPassword(int id, String newPassword);
+
+    /** 用户自助：修改绑定邮箱（需要新邮箱收到的验证码，且该邮箱未被他人占用） */
+    String modifyEmail(int id, ModifyEmailVO vo);
+
+    /** 用户自助：修改密码（需要校验原密码） */
+    String changePassword(int id, ChangePasswordVO vo);
 }

@@ -5,7 +5,9 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.entity.dto.Account;
 import com.example.entity.dto.AccountDetails;
 import com.example.entity.vo.request.AccountSaveVO;
+import com.example.entity.vo.request.ChangePasswordVO;
 import com.example.entity.vo.request.ConfirmResetVO;
+import com.example.entity.vo.request.ModifyEmailVO;
 import com.example.entity.vo.request.EmailRegisterVO;
 import com.example.entity.vo.request.EmailResetVO;
 import com.example.mapper.AccountDetailsMapper;
@@ -177,6 +179,44 @@ public class AccountServiceImpl extends ServiceImpl<AccountMapper, Account> impl
     @Override
     public void modifyPassword(int id, String newPassword) {
         this.update().eq("id", id).set("password", encoder.encode(newPassword)).update();
+    }
+
+    @Override
+    public String modifyEmail(int id, ModifyEmailVO vo) {
+        String email = vo.getEmail();
+        // 验证码是发到「新邮箱」的：能收到就证明用户确实拥有它
+        String key = Const.VERIFY_EMAIL_DATA + email;
+        String code = stringRedisTemplate.opsForValue().get(key);
+        if (code == null) return "请先获取验证码";
+        if (!code.equals(vo.getCode())) return "验证码错误，请重新输入";
+
+        // 邮箱是登录凭据之一，不能和别人的账号重复
+        Account bound = this.findAccountByNameOrEmail(email);
+        if (bound != null && !bound.getId().equals(id)) {
+            return "该邮箱已被其他账号绑定";
+        }
+
+        boolean update = this.update().eq("id", id).set("email", email).update();
+        if (update) {
+            // 用过即焚，避免同一条验证码被重复利用
+            stringRedisTemplate.delete(key);
+        }
+        return update ? null : "内部错误，请联系管理员";
+    }
+
+    @Override
+    public String changePassword(int id, ChangePasswordVO vo) {
+        Account account = this.findAccountById(id);
+        if (account == null) return "用户不存在";
+        // 必须校验原密码：否则只要令牌泄露就能直接把密码改掉、把号占为己有
+        if (!encoder.matches(vo.getPassword(), account.getPassword())) {
+            return "原密码错误，请重新输入";
+        }
+        boolean update = this.update()
+                .eq("id", id)
+                .set("password", encoder.encode(vo.getNewPassword()))
+                .update();
+        return update ? null : "内部错误，请联系管理员";
     }
 
     public Account findAccountByNameOrEmail(String text) {

@@ -43,17 +43,31 @@ const rules = {
 
 }
 
+let timer = null
+
+/** 60 秒倒计时。注意要保存句柄：每次点都新建一个 interval 会越积越多 */
+function startCountdown() {
+  clearInterval(timer)
+  coldTime.value = 60
+  timer = setInterval(() => {
+    if (--coldTime.value <= 0) {
+      clearInterval(timer)
+      timer = null
+    }
+  }, 1000)
+}
+
 function askCode() {
-  if(isEmailValid  ){
-    coldTime.value = 60
-    get(`/api/auth/ask-code?email=${form.email}&type=register`, () => {
+  if (isEmailValid) {
+    // 这里必须用 reset：type 决定邮件文案，也决定这次验证码是给谁用的
+    get(`/api/auth/ask-code?email=${form.email}&type=reset`, () => {
       ElMessage.success(`验证码已发送到邮箱:${form.email}，请注意查收`)
-      setInterval(() => coldTime.value--,1000)
+      startCountdown()
     }, (message) => {
       ElMessage.warning(message)
       coldTime.value = 0
     })
-  }else {
+  } else {
     ElMessage.warning("请输入正确的电子邮件地址！")
   }
 }
@@ -136,14 +150,14 @@ function doReset() {
       <div style="margin-top: 50px">
         <el-form :model="form" :rules="rules" ref="formRef">
           <el-form-item prop="password">
-            <el-input v-model="form.password" maxlength="20" type="password" placeholder="密码">
+            <el-input v-model="form.password" maxlength="20" type="password" show-password placeholder="密码">
               <template #prefix>
                 <el-icon><Lock /></el-icon>
               </template>
             </el-input>
           </el-form-item>
           <el-form-item prop="password_repeat">
-            <el-input v-model="form.password_repeat" maxlength="20" type="password" placeholder="重复密码">
+            <el-input v-model="form.password_repeat" maxlength="20" type="password" show-password placeholder="重复密码">
               <template #prefix>
                 <el-icon><Lock /></el-icon>
               </template>

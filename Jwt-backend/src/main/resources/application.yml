@@ -1,45 +1,48 @@
+# ==================== 公共配置 ====================
+# 这里只放「各环境都一样」的东西。
+#   各环境不同的（数据源、端口、日志级别） → application-dev.yml / application-prod.yml
+#   真实密钥                              → application-local.yml（被 .gitignore 排除，不进版本库）
 spring:
+  profiles:
+    active: dev
+    group:
+      # dev 组自动叠加 local：本机的数据库密码 / 邮箱授权码 / JWT 密钥都放在那里
+      dev: local
+
   mail:
     host: smtp.163.com
     port: 465
     username: tomoWeb@163.com
-    password: YPvaDxmVUSQ5MbQ5
+    # 授权码不在这里，见 application-local.yml
     properties:
       mail:
         smtp:
           ssl:
             enable: true
           auth: true
+
   rabbitmq:
     addresses: localhost
     username: admin
-    password: admin
     virtual-host: /
+
+  # 文件上传上限。Spring Boot 默认单文件只有 1MB，不改的话
+  # 业务层写的「不超过 5MB」根本走不到，请求会被容器先拒掉
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 10MB
 
   security:
     filter:
       order: -100
     jwt:
-      key: asdfaaaaaaaaa
       expire: 7
       # 令牌申请频率熔断：冷却 base 秒内最多 frequency 次，超限直接封 upgrade 秒
       limit:
         base: 10
         upgrade: 300
         frequency: 30
-
-  datasource:
-    url: jdbc:mysql://localhost:3306/template
-    username: root
-    password: 123456
-    driver-class-name: com.mysql.cj.jdbc.Driver
-
-  # 全局限流：period 秒内最多 limit 次请求，超出封禁 block 秒
-  web:
-    flow:
-      period: 3
-      limit: 10
-      block: 30
 
 # ==================== 论坛（阶段 3） ====================
 forum:

@@ -1,14 +1,27 @@
 <script setup lang="ts">
-import Card from  "@/components/Card.vue"
-import {Message, Notebook, Refresh, Select, User} from "@element-plus/icons-vue";
-import {useStore} from  "@/store"
-import {computed, reactive, ref} from "vue";
+import Card from "@/components/Card.vue"
+import {Lock, Message, Notebook, Refresh, Select, Setting, User} from "@element-plus/icons-vue";
+import {useStore} from "@/store"
+import {computed, onMounted, reactive, ref} from "vue";
+import {ElMessage} from "element-plus";
+import router from "@/router";
+import {logout} from "@/net";
+import {
+  apiAskEmailCode,
+  apiChangePassword,
+  apiModifyEmail,
+  apiSaveDetails,
+  apiSavePrivacy,
+  apiUserDetails,
+  apiUserPrivacy
+} from "@/net/api/user";
 
 const store = useStore()
 const registerTime = computed(() => new Date(store.user.registerTime).toLocaleString())
 
 const baseFormRef = ref()
 const emailFormRef = ref()
+const passwordFormRef = ref()
 
 const baseForm = reactive({
   username: '',
@@ -17,7 +30,6 @@ const baseForm = reactive({
   qq: '',
   wx: '',
   desc: '',
-
 })
 
 const emailForm = reactive({
@@ -25,10 +37,36 @@ const emailForm = reactive({
   code: '',
 })
 
+const passwordForm = reactive({
+  password: '',
+  newPassword: '',
+  confirmPassword: '',
+})
+
+/**
+ * 隐私开关：true = 公开，false = 仅自己可见。
+ * 控制的是「个人主页上，别人能看到我哪些资料」，自己看自己永远全部可见。
+ */
+const privacy = reactive({
+  phone: true,
+  email: true,
+  wx: true,
+  qq: true,
+  gender: true,
+})
+const privacyLoading = ref(true)
+
+/** 只提交被改动的那一个开关，和参考实现一样「一改就存」 */
+function savePrivacy(type, status) {
+  apiSavePrivacy({type, status}, () => {
+    ElMessage.success('已保存')
+  })
+}
+
 const validateUsername = (rule, value, callback) => {
-  if(value === '') {
+  if (value === '') {
     callback(new Error('请输入用户名'))
-  } else if(!/^[a-zA-Z0-9\u4e00-\u9fa5]+$/.test(value)){
+  } else if (!/^[a-zA-Z0-9\u4e00-\u9fa5]+$/.test(value)) {
     callback(new Error('用户名不能包含特殊字符,只能是中/英文'))
   } else {
     callback()
@@ -38,21 +76,135 @@ const validateUsername = (rule, value, callback) => {
 const rules = {
   username: [
     {validator: validateUsername, trigger: ['blur', 'change']},
-    {min: 1, max: 10, message: '用户名长度必须在2~8个字符之间', trigger: ['blur', 'change']}
+    {min: 1, max: 10, message: '用户名长度必须在 1~10 个字符之间', trigger: ['blur', 'change']}
   ],
   email: [
-    {required: true, message:'请输入邮箱地址', trigger: 'blur' },
+    {required: true, message: '请输入邮箱地址', trigger: 'blur'},
     {type: 'email', message: '请输入合法的电子邮件地址', trigger: ['blur', 'change']}
   ],
   code: [
-    {required: true, message:'请输入获取到的验证码', trigger: 'blur' },
-  ]
+    {required: true, message: '请输入获取到的验证码', trigger: 'blur'},
+  ],
 }
 
+// 验证码 60 秒倒计时
+const counter = ref(0)
+let timer = null
+function startCountdown() {
+  counter.value = 60
+  timer = setInterval(() => {
+    if (--counter.value <= 0) {
+      clearInterval(timer)
+      timer = null
+    }
+  }, 1000)
+}
+
+onMounted(() => {
+  apiUserDetails(data => {
+    Object.assign(baseForm, {
+      // ⚠️ 用户名不在 details 里：后端 AccountDetailsVO 只有 gender/phone/qq/wx/desc，
+      // 用户名属于 db_account，要从登录时拉的 store.user 取
+      username: store.user.username ?? '',
+      gender: String(data.gender ?? 1),
+      phone: data.phone ?? '',
+      qq: data.qq ?? '',
+      wx: data.wx ?? '',
+      desc: data.desc ?? '',
+    })
+  })
+  // 邮箱表单默认填当前邮箱，省得用户重新输一遍
+  emailForm.email = store.user.email || ''
+
+  apiUserPrivacy(data => {
+    Object.assign(privacy, data)
+    privacyLoading.value = false
+  }, () => {
+    privacyLoading.value = false
+  })
+})
+
+/** 保存基本资料 */
 function saveDetails() {
-  baseFormRef.value.validate
+  baseFormRef.value.validate(valid => {
+    if (!valid) return
+
+    // 空串要转成 null：后端对 phone 用了 @Pattern(手机号格式)，空串会校验失败；
+    // qq/wx/desc 用的 @Length 虽然放行空串，但统一成 null 语义更准（"没填"而不是"填空"）。
+    const blankToNull = v => {
+      const s = (v ?? '').trim()
+      return s === '' ? null : s
+    }
+
+    apiSaveDetails({
+      username: baseForm.username,
+      gender: Number(baseForm.gender),
+      phone: blankToNull(baseForm.phone),
+      qq: blankToNull(baseForm.qq),
+      wx: blankToNull(baseForm.wx),
+      desc: blankToNull(baseForm.desc),
+    }, () => {
+      ElMessage.success('个人信息已保存')
+      // 顶栏显示的用户名来自 store，改了要同步，否则会一直显示旧名字
+      store.user.username = baseForm.username
+    })
+  })
 }
 
+/** 给「新邮箱」发验证码 */
+function askCode() {
+  if (counter.value > 0) return
+  emailFormRef.value.validateField('email', err => {
+    if (err) return
+    apiAskEmailCode(emailForm.email, 'modify', () => {
+      ElMessage.success('验证码已发送到新邮箱，请查收')
+      startCountdown()
+    })
+  })
+}
+
+/** 更新绑定邮箱 */
+function updateEmail() {
+  emailFormRef.value.validate(valid => {
+    if (!valid) return
+    apiModifyEmail({email: emailForm.email, code: emailForm.code}, () => {
+      ElMessage.success('邮箱已更新')
+      // 顶栏和本页都可能显示邮箱，顺手同步一下
+      store.user.email = emailForm.email
+      emailForm.code = ''
+    })
+  })
+}
+
+/** 修改密码 */
+function changePassword() {
+  passwordFormRef.value.validate(valid => {
+    if (!valid) return
+    apiChangePassword({password: passwordForm.password, newPassword: passwordForm.newPassword}, () => {
+      ElMessage.success('密码已修改，请重新登录')
+      // 走 logout：后端会把当前令牌拉黑，本地令牌也会清掉，然后回登录页
+      logout(() => router.push('/'))
+    })
+  })
+}
+
+const passwordRules = {
+  password: [{required: true, message: '请输入原密码', trigger: 'blur'}],
+  newPassword: [
+    {required: true, message: '请输入新密码', trigger: 'blur'},
+    {min: 6, max: 20, message: '新密码长度必须在 6-20 之间', trigger: ['blur', 'change']}
+  ],
+  confirmPassword: [
+    {required: true, message: '请再次输入新密码', trigger: 'blur'},
+    {
+      validator: (rule, value, callback) => {
+        if (value !== passwordForm.newPassword) callback(new Error('两次输入的密码不一致'))
+        else callback()
+      },
+      trigger: ['blur', 'change']
+    }
+  ],
+}
 </script>
 
 <template>
@@ -65,8 +217,8 @@ function saveDetails() {
           </el-form-item>
           <el-form-item label="性别">
             <el-radio-group v-model="baseForm.gender">
-              <el-radio label=“0“>男</el-radio>
-              <el-radio label="1">女</el-radio>
+              <el-radio value="0">男</el-radio>
+              <el-radio value="1">女</el-radio>
             </el-radio-group>
           </el-form-item>
           <el-form-item label="手机号" prop="phone">
@@ -82,15 +234,16 @@ function saveDetails() {
             <el-input v-model="baseForm.desc" type="textarea" :rows="6" maxlength="100"/>
           </el-form-item>
           <div>
-            <el-button :icon="Select" type="success">
+            <el-button :icon="Select" type="success" @click="saveDetails">
               保存用户信息
             </el-button>
           </div>
         </el-form>
       </card>
-      <card style="margin-top: 10px" :icon="Message" title="电子邮件地址" desc="你可以在这里编辑你的邮件地址">
+
+      <card style="margin-top: 10px" :icon="Message" title="电子邮件地址" desc="修改后需要用新邮箱收到的验证码确认">
         <el-form :rules="rules" :model="emailForm" ref="emailFormRef" label-position="top" style="margin: 0 10px 10px 10px">
-          <el-form-item label="电子邮件" prop="email">
+          <el-form-item label="新电子邮件" prop="email">
             <el-input v-model="emailForm.email"/>
           </el-form-item>
           <el-form-item prop="code">
@@ -99,18 +252,70 @@ function saveDetails() {
                 <el-input placeholder="请获取验证码" v-model="emailForm.code"/>
               </el-col>
               <el-col :span="6">
-                <el-button type="success" style="width: 100%">获取验证码</el-button>
+                <el-button type="success" style="width: 100%" :disabled="counter > 0" @click="askCode">
+                  {{ counter > 0 ? counter + 's 后重试' : '获取验证码' }}
+                </el-button>
               </el-col>
             </el-row>
           </el-form-item>
           <div>
-            <el-button :icon="Refresh" type="success">
+            <el-button :icon="Refresh" type="success" @click="updateEmail">
               更新电子邮件
             </el-button>
           </div>
         </el-form>
       </card>
+
+      <card style="margin-top: 10px" :icon="Lock" title="修改密码" desc="需要先验证原密码，修改后需重新登录">
+        <el-form :rules="passwordRules" :model="passwordForm" ref="passwordFormRef" label-position="top" style="margin: 0 10px 10px 10px">
+          <el-form-item label="原密码" prop="password">
+            <el-input v-model="passwordForm.password" type="password" show-password maxlength="20"/>
+          </el-form-item>
+          <el-form-item label="新密码" prop="newPassword">
+            <el-input v-model="passwordForm.newPassword" type="password" show-password maxlength="20"/>
+          </el-form-item>
+          <el-form-item label="确认新密码" prop="confirmPassword">
+            <el-input v-model="passwordForm.confirmPassword" type="password" show-password maxlength="20"/>
+          </el-form-item>
+          <div>
+            <el-button :icon="Notebook" type="success" @click="changePassword">
+              确认修改密码
+            </el-button>
+          </div>
+        </el-form>
+      </card>
+
+      <card style="margin-top: 10px" :icon="Setting" title="隐私设置"
+            desc="控制你的个人主页上，别人能看到哪些资料（自己看自己永远全部可见）"
+            v-loading="privacyLoading">
+        <div class="privacy-list">
+          <el-checkbox :model-value="privacy.phone"
+                       @change="v => { privacy.phone = v; savePrivacy('phone', v) }">
+            公开展示我的手机号
+          </el-checkbox>
+          <el-checkbox :model-value="privacy.email"
+                       @change="v => { privacy.email = v; savePrivacy('email', v) }">
+            公开展示我的电子邮件地址
+          </el-checkbox>
+          <el-checkbox :model-value="privacy.wx"
+                       @change="v => { privacy.wx = v; savePrivacy('wx', v) }">
+            公开展示我的微信号
+          </el-checkbox>
+          <el-checkbox :model-value="privacy.qq"
+                       @change="v => { privacy.qq = v; savePrivacy('qq', v) }">
+            公开展示我的 QQ 号
+          </el-checkbox>
+          <el-checkbox :model-value="privacy.gender"
+                       @change="v => { privacy.gender = v; savePrivacy('gender', v) }">
+            公开展示我的性别
+          </el-checkbox>
+        </div>
+        <div class="privacy-tip">
+          想看效果？点帖子里的用户名进个人主页，那里显示的就是按这些开关过滤后的资料。
+        </div>
+      </card>
     </div>
+
     <div class="setting-right">
       <div style="position: sticky; top: 20px">
         <card>
@@ -119,9 +324,8 @@ function saveDetails() {
             <div style="font-weight: bold">你好,{{store.user.username}}</div>
           </div>
           <el-divider style="margin: 10px 0"/>
-          <div style="font-size: 14px;color: gray;padding: 10px">；
-            《以撒的结合：重生（The Binding of Isaac: Rebirth）》
-            是一款集合了推箱子、血统检验、少女换装、宠物养成等等元素的地牢探险/Roguelite类跨世代大作。
+          <div style="font-size: 14px;color: gray;padding: 10px">
+            {{ store.user.email }}
           </div>
         </card>
         <card style="margin-top: 10px; font-size: 14px">
@@ -134,16 +338,26 @@ function saveDetails() {
 </template>
 
 <style scoped>
-.setting-left{
+.setting-left {
   flex: 1;
   margin: 20px;
 }
 
-.setting-right{
+.setting-right {
   width: 300px;
-  margin: 20px 30px 20px ;
+  margin: 20px 30px 20px;
 }
 
+.privacy-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0 10px;
+}
 
-
+.privacy-tip {
+  margin: 12px 10px 0;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
 </style>

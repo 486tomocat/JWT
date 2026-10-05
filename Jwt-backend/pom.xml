@@ -96,6 +96,38 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
+
+        <!-- MinIO 对象存储：帖子配图 / 头像。⚠️ 首次需要联网拉取（mvn -U） -->
+        <dependency>
+            <groupId>io.minio</groupId>
+            <artifactId>minio</artifactId>
+            <version>8.5.7</version>
+        </dependency>
+
+        <!--
+          Swagger / OpenAPI 在线接口文档（访问 /swagger-ui/index.html）。
+          ⚠️ 必须用 3.x：v2.x 是给 Spring Boot 3（Spring Framework 6）的，
+          本项目是 Boot 4（Framework 7），装 2.x 会因依赖代际不匹配直接编译失败
+          （之前试过 2.1.0，报缺 jackson-dataformat-yaml 等传递依赖）。
+          官方兼容矩阵：v1 → Boot 2.x，v2.x → Boot 3.x，**v3.x → Boot 4**。
+        -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>3.1.1</version>
+        </dependency>
+
+        <!--
+          Elasticsearch：帖子全文搜索。
+          版本由 Spring Boot 的 BOM 决定，**不要自己写 version** ——
+          写死了反而容易和 Boot 4 的客户端代际对不上。
+          本机服务端是 ES 9.5.4（wire 兼容下限 8.19），客户端可连。
+        -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-elasticsearch</artifactId>
+        </dependency>
+
     </dependencies>
 
     <build>

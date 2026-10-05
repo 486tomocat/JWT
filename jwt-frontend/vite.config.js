@@ -27,7 +27,8 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost:8080',
+        // 后端固定跑在 8081：8080 会被 Steam 的 CEF 调试端口占用
+        target: 'http://localhost:8081',
         changeOrigin: true,
       },
     },
