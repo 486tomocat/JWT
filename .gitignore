@@ -11,6 +11,11 @@ memory/
 # application-local.yml 里放着数据库密码、邮箱授权码、JWT 签名密钥
 application-local.yml
 
+# docker compose 的环境变量文件（真实密码 / AI key）
+# 模板 .env.example 是要提交的，别一起忽略掉
+.env
+.env.local
+
 # ── IDE / 编辑器 ──
 .idea/
 *.iml

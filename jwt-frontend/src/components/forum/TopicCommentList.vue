@@ -23,7 +23,9 @@ function isMine(comment) {
         <el-empty v-if="!comments.length" description="还没有评论" :image-size="60"/>
 
         <div v-for="c in comments" :key="c.id" class="comment">
-            <el-avatar :size="30" :src="c.user && c.user.avatar"/>
+            <el-avatar :size="30" :src="c.user && c.user.avatar">
+            {{ (c.user && c.user.username || '?').charAt(0) }}
+          </el-avatar>
             <div class="body">
                 <div class="head">
                     <span class="author">{{ c.user && c.user.username }}</span>

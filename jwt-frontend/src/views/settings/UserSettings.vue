@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import Card from "@/components/Card.vue"
-import {Lock, Message, Notebook, Refresh, Select, Setting, User} from "@element-plus/icons-vue";
+import {Camera, Lock, Message, Notebook, Refresh, Select, Setting, User} from "@element-plus/icons-vue";
 import {useStore} from "@/store"
 import {computed, onMounted, reactive, ref} from "vue";
 import {ElMessage} from "element-plus";
 import router from "@/router";
+import {apiUploadImage} from "@/net/api/file";
+import {apiSaveAvatar} from "@/net/api/user";
 import {logout} from "@/net";
 import {
   apiAskEmailCode,
@@ -17,6 +19,8 @@ import {
 } from "@/net/api/user";
 
 const store = useStore()
+
+const uploadingAvatar = ref(false)
 const registerTime = computed(() => new Date(store.user.registerTime).toLocaleString())
 
 const baseFormRef = ref()
@@ -125,6 +129,41 @@ onMounted(() => {
 })
 
 /** 保存基本资料 */
+/**
+ * 换头像：选文件 → 上传到 MinIO → 保存 URL 到账号。
+ *
+ * 这个操作**立即生效**（不像下面的表单要点"保存用户信息"）——
+ * 换头像本来就是"点一下看到结果"的动作，多一步确认反而别扭。
+ */
+function pickAvatar() {
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.accept = 'image/jpeg,image/png,image/gif,image/webp'
+    input.onchange = () => {
+        const file = input.files && input.files[0]
+        if (!file) return
+        if (file.size > 5 * 1024 * 1024) {
+            return ElMessage.warning('图片不能超过 5MB')
+        }
+        uploadingAvatar.value = true
+        apiUploadImage(file, url => {
+            apiSaveAvatar(url, () => {
+                // 本地状态同步：右上角、AI 页、评论区都会跟着变
+                store.user.avatar = url
+                uploadingAvatar.value = false
+                ElMessage.success('头像已更新')
+            }, message => {
+                uploadingAvatar.value = false
+                ElMessage.warning(message)
+            })
+        }, message => {
+            uploadingAvatar.value = false
+            ElMessage.warning(message)
+        })
+    }
+    input.click()
+}
+
 function saveDetails() {
   baseFormRef.value.validate(valid => {
     if (!valid) return
@@ -320,17 +359,28 @@ const passwordRules = {
       <div style="position: sticky; top: 20px">
         <card>
           <div style="text-align: center; padding: 5px 15px 0 15px">
-            <el-avatar :size="70" src="https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png"/>
-            <div style="font-weight: bold">你好,{{store.user.username}}</div>
+            <!-- 头像可点：选图 → 上传 MinIO → 立即保存（见 pickAvatar） -->
+            <el-tooltip content="点击更换头像" placement="top">
+              <div class="avatar-wrap" v-loading="uploadingAvatar" @click="pickAvatar">
+                <el-avatar :size="70" :src="store.user.avatar">
+                  {{ (store.user.username || '我').charAt(0) }}
+                </el-avatar>
+                <div class="avatar-mask">
+                  <el-icon><Camera/></el-icon>
+                </div>
+              </div>
+            </el-tooltip>
+            <div style="font-weight: bold">你好,{{ store.user.username }}</div>
           </div>
           <el-divider style="margin: 10px 0"/>
+          <!-- 个人简介：名片的正文位置放这个比放邮箱合适（邮箱下面那张卡片里已经有了） -->
           <div style="font-size: 14px;color: gray;padding: 10px">
-            {{ store.user.email }}
+            {{ baseForm.desc || '这个用户很懒，没有填写个人简介~' }}
           </div>
         </card>
         <card style="margin-top: 10px; font-size: 14px">
-          <div>账号注册时间: {{registerTime}}</div>
-          <div style="color: grey">欢迎进入轨道</div>
+          <div>账号注册时间: {{ registerTime }}</div>
+          <div style="color: grey">欢迎来到校园论坛！</div>
         </card>
       </div>
     </div>
@@ -338,6 +388,35 @@ const passwordRules = {
 </template>
 
 <style scoped>
+/* ---------- 头像上传（右侧名片用） ---------- */
+.avatar-wrap {
+  position: relative;
+  cursor: pointer;
+  border-radius: 50%;
+  overflow: hidden;
+  line-height: 0;
+
+  .avatar-mask {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    font-size: 11px;
+    color: #fff;
+    background: rgba(0, 0, 0, .45);
+    opacity: 0;
+    transition: opacity .2s;
+    line-height: 1.2;
+  }
+
+  &:hover .avatar-mask {
+    opacity: 1;
+  }
+}
+
 .setting-left {
   flex: 1;
   margin: 20px;

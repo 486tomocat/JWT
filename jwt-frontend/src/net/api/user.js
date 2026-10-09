@@ -10,6 +10,12 @@ export const apiUserInfo = (success, failure) =>
     get('/api/user/info', success, failure)
 
 /** 当前登录用户的资料（性别 / 手机 / QQ / 微信 / 简介） */
+/**
+ * 保存头像。传入的是 apiUploadImage 返回的图片 URL（先上传、再保存）。
+ */
+export const apiSaveAvatar = (avatar, success, failure) =>
+    post('/api/user/save-avatar', {avatar}, success, failure)
+
 export const apiUserDetails = (success, failure) =>
     get('/api/user/details', success, failure)
 

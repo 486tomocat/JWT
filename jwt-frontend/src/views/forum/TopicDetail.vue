@@ -117,7 +117,9 @@ onMounted(load)
             </h2>
 
             <div class="meta">
-                <el-avatar :size="26" :src="topic.user && topic.user.avatar"/>
+                <el-avatar :size="26" :src="topic.user && topic.user.avatar">
+          {{ (topic.user && topic.user.username || '?').charAt(0) }}
+        </el-avatar>
                 <span class="author" @click="openAuthor">{{ topic.user && topic.user.username }}</span>
                 <span class="sep">·</span>
                 <span>{{ formatTime(topic.time) }}</span>

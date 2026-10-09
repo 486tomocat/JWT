@@ -219,6 +219,27 @@ public class AccountServiceImpl extends ServiceImpl<AccountMapper, Account> impl
         return update ? null : "内部错误，请联系管理员";
     }
 
+    @Override
+    public String modifyAvatar(int id, String avatar) {
+        if (avatar == null || avatar.isBlank()) {
+            return "头像地址不能为空";
+        }
+        String url = avatar.trim();
+        // 校验一下：只接受正常的 http(s) 地址，且长度合理 ——
+        // 前端填进来的毕竟是个字符串，不做检查就等于允许往库里写任意内容
+        if (url.length() > 500) {
+            return "头像地址过长";
+        }
+        if (!url.startsWith("http://") && !url.startsWith("https://")) {
+            return "头像地址格式不正确";
+        }
+        boolean update = this.update()
+                .eq("id", id)
+                .set("avatar", url)
+                .update();
+        return update ? null : "内部错误，请联系管理员";
+    }
+
     public Account findAccountByNameOrEmail(String text) {
         return this.query()
                 .eq("username", text).or()

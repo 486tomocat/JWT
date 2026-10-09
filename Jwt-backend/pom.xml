@@ -28,7 +28,26 @@
     </scm>
     <properties>
         <java.version>17</java.version>
+        <!-- Spring AI 版本集中在这里，方便日后升级 -->
+        <spring-ai.version>2.0.1</spring-ai.version>
     </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <!--
+              Spring AI BOM：统一管理 spring-ai-* 的版本，下面的 starter 就不用写 version。
+              官方说明：**Spring AI 2.0.x 对应 Spring Boot 4.0.x / 4.1.x**（本项目 Boot 4.0.6 正好匹配）。
+              ⚠️ 1.x 是给 Boot 3.x 的，装了会因依赖代际不匹配而失败（和 springdoc、ES 一个道理）。
+            -->
+            <dependency>
+                <groupId>org.springframework.ai</groupId>
+                <artifactId>spring-ai-bom</artifactId>
+                <version>${spring-ai.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -102,6 +121,18 @@
             <groupId>io.minio</groupId>
             <artifactId>minio</artifactId>
             <version>8.5.7</version>
+        </dependency>
+
+        <!--
+          Spring AI 的 OpenAI 对话模型。
+          用 **OpenAI** 而非某个厂商专用的 starter 是有意的：
+          DeepSeek / 阿里百炼 / Ollama / OpenAI 的 API **都兼容 OpenAI 协议**，
+          所以只写一套 ChatClient 代码，**换服务商只改 application-dev.yml 里的三行配置**
+          （api-key / base-url / chat.options.model）。
+        -->
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-starter-model-openai</artifactId>
         </dependency>
 
         <!--

@@ -27,6 +27,35 @@ spring:
       limit: 10
       block: 30
 
+  # Spring AI：AI 问答助手。
+  # 🔑 换服务商只改这几行 —— 它们都兼容 OpenAI 协议：
+  #     DeepSeek  : base-url=https://api.deepseek.com          model=deepseek-chat
+  #     阿里百炼   : base-url=https://dashscope.aliyuncs.com/compatible-mode  model=qwen-plus
+  #     Ollama本地 : base-url=http://localhost:11434/v1        model=qwen2.5
+  #      OpenAI    : base-url=https://api.openai.com            model=gpt-4o-mini
+  # 真实 key 放在 application-local.yml（不进版本库）。
+  ai:
+    openai:
+      # 占位值：没有 key 也能正常启动，只有真正调用 AI 时才会失败
+      api-key: ${AI_API_KEY:placeholder-set-your-key-in-local-yml}
+
+      # 当前用的是**阿里百炼**（DashScope）的 OpenAI 兼容端点
+      base-url: ${AI_BASE_URL:https://dashscope.aliyuncs.com/compatible-mode}
+
+      chat:
+        options:
+          # qwen-plus：能力与价格均衡，问答场景够用
+          model: ${AI_MODEL:qwen-plus}
+          temperature: 0.7
+
+      # Embedding 模型（RAG 向量检索用）。
+      # text-embedding-v3 是百炼当前推荐的中文向量模型，1024 维。
+      # 走的是同一个 OpenAI 兼容端点，所以不需要额外的 starter。
+      embedding:
+        options:
+          model: ${AI_EMBEDDING_MODEL:text-embedding-v3}
+          dimensions: 1024
+
   # Elasticsearch：帖子全文搜索。
   # 本机服务端已关掉安全认证（config/elasticsearch.yml 里 xpack.security.enabled: false），
   # 所以直接 http 连，不需要账号密码。
@@ -34,6 +63,17 @@ spring:
     uris: http://127.0.0.1:9200
     connection-timeout: 5s
     socket-timeout: 30s
+
+# ==================== 天气 ====================
+# 数据源 Open-Meteo：免费、开放、**不需要 API key**，所以这里没有任何敏感信息。
+forum:
+  # AI 额度：按 token 数、**每週**限制。key 由网站统一提供，用户不需要接触。
+  ai:
+    weekly-token-limit: 200000
+  weather:
+    default-city: 北京
+    geocoding-api: https://geocoding-api.open-meteo.com/v1/search
+    forecast-api: https://api.open-meteo.com/v1/forecast
 
 # ==================== Swagger / OpenAPI ====================
 # 文档页：http://localhost:8081/swagger-ui/index.html
@@ -44,14 +84,16 @@ springdoc:
     operations-sorter: alpha
     display-request-duration: true
 
-# ==================== MinIO 对象存储 ====================
-# 账号密码在 application-local.yml（不进版本库）。
+# ==================== 对象存储（S3 兼容）====================
+# 现在用的是 **RustFS**（Rust 写的 S3 兼容实现），端口和接口都和 MinIO 一致，
+# 所以后端用的 MinioClient（本质就是 S3 客户端）不用换。
 # 桶不存在时程序会自动创建并设为公开读，不用手工去控制台建。
-minio:
+# 账号密码在 application-local.yml（不进版本库）。
+storage:
   endpoint: http://127.0.0.1:9000
   bucket: forum
-  access-key: ${MINIO_ACCESS_KEY:}
-  secret-key: ${MINIO_SECRET_KEY:}
+  access-key: ${STORAGE_ACCESS_KEY:}
+  secret-key: ${STORAGE_SECRET_KEY:}
 
 # ==================== 服务端口 ====================
 # 本机 8080 会被 Steam 的 steamwebhelper.exe（CEF remote debugging）长期占用，

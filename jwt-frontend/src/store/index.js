@@ -8,7 +8,10 @@ export const useStore = defineStore('general', {
                 username: '',
                 email: '',
                 role: '',
-                registerTime: null
+                registerTime: null,
+                // 头像 URL：换头像后各处的头像都读它，所以必须在这里声明，
+                // 否则运行时赋值虽然也能生效，但字段来源不清晰
+                avatar: null
             },
 
             /**

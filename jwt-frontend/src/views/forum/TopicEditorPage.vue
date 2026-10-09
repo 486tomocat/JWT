@@ -230,7 +230,9 @@ onBeforeUnmount(() => {
                 <div class="preview-label">预览</div>
                 <div class="preview-body">
                     <div class="preview-head">
-                        <el-avatar :size="30" :src="store.user.avatar"/>
+                        <el-avatar :size="30" :src="store.user.avatar">
+                            {{ (store.user.username || '我').charAt(0) }}
+                        </el-avatar>
                         <span class="name">{{ store.user.username }}</span>
                     </div>
                     <h2 class="preview-title">{{ title || '标题' }}</h2>

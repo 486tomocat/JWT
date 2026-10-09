@@ -67,7 +67,9 @@ onMounted(load)
 
         <template v-else-if="profile">
             <div class="header">
-                <el-avatar :size="72" :src="profile.avatar"/>
+                <el-avatar :size="72" :src="profile.avatar">
+          {{ (profile.username || '?').charAt(0) }}
+        </el-avatar>
                 <div class="info">
                     <div class="name-row">
                         <span class="name">{{ profile.username }}</span>

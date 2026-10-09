@@ -36,4 +36,10 @@ public interface AccountService extends IService<Account>, UserDetailsService {
 
     /** 用户自助：修改密码（需要校验原密码） */
     String changePassword(int id, ChangePasswordVO vo);
+
+    /**
+     * 修改头像。
+     * 传入的是上传接口返回的图片 URL —— 所以调用方必须**先上传再保存**。
+     */
+    String modifyAvatar(int id, String avatar);
 }

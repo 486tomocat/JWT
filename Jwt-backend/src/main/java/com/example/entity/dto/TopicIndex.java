@@ -3,10 +3,14 @@ package com.example.entity.dto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.util.List;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
+
+import java.util.List;
 
 /**
  * 帖子的搜索索引。
@@ -33,7 +37,17 @@ public class TopicIndex {
     @Field(type = FieldType.Text)
     String text;
 
-    /** 隐藏帖不进搜索结果，用它做过滤（Keyword 类型才能精确 term 匹配） */
+    /** 隐藏帖不进搜索结果，用它做过滤（Integer 类型才能精确 term 匹配） */
     @Field(type = FieldType.Integer)
     Integer invisible;
+
+    /**
+     * 标题 + 摘要的**语义向量**（RAG 检索用）。
+     *
+     * 维度必须和 embedding 模型一致：阿里百炼的 text-embedding-v3 输出 **1024 维**。
+     * ⚠️ 换 embedding 模型时这个数字要跟着改，并且**索引必须重建**
+     * （ES 不允许直接改已有字段的维度）。
+     */
+    @Field(type = FieldType.Dense_Vector, dims = 1024)
+    List<Float> denseVector;
 }

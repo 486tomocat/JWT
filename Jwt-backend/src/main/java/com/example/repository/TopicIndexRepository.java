@@ -6,6 +6,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.elasticsearch.annotations.Query;
 import org.springframework.data.elasticsearch.repository.ElasticsearchRepository;
 
+import java.util.List;
+
 public interface TopicIndexRepository extends ElasticsearchRepository<TopicIndex, Integer> {
 
     /**
@@ -39,4 +41,27 @@ public interface TopicIndexRepository extends ElasticsearchRepository<TopicIndex
             }
             """)
     Page<TopicIndex> searchByKeyword(String keyword, Pageable pageable);
+
+    /**
+     * 向量近邻检索（RAG 用）。
+     *
+     * ES 的 kNN 查询：在向量空间里找离 query_vector 最近的 k 篇。
+     *   - num_candidates 是"候选池"，比 k 大一些能让结果更准（ES 先粗筛 50 个再精排）
+     *   - filter 掉已隐藏的帖子
+     *   - ?0 = 查询向量（float[]），?1 = k，?2 = 候选数
+     *
+     * ⚠️ 用 List<Float> 而不是 float[]：Spring Data ES 对数组参数的序列化更稳。
+     */
+    @Query("""
+            {
+              "knn": {
+                "field": "denseVector",
+                "query_vector": ?0,
+                "k": ?1,
+                "num_candidates": ?2,
+                "filter": { "term": { "invisible": 0 } }
+              }
+            }
+            """)
+    List<TopicIndex> knnSearch(List<Float> queryVector, int k, int numCandidates);
 }

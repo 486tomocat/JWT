@@ -1,0 +1,16 @@
+# 构建产物与本地环境不该进镜像
+target/
+logs/
+*.log
+
+# 本地私密配置（真实密码/key）—— 镜像里靠环境变量注入
+src/main/resources/application-local.yml
+
+# IDE 与版本控制
+.idea/
+*.iml
+.git/
+.gitignore
+
+# 文档
+*.md

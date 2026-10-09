@@ -9,6 +9,7 @@ import com.example.entity.vo.response.UserProfileVO;
 import com.example.entity.dto.AccountPrivacy;
 import com.example.entity.vo.request.ChangePasswordVO;
 import com.example.entity.vo.request.PrivacySaveVO;
+import com.example.entity.vo.request.AvatarSaveVO;
 import com.example.entity.vo.request.DetailsSaveVO;
 import com.example.entity.vo.request.ModifyEmailVO;
 import com.example.service.AccountDetailsService;
@@ -59,6 +60,16 @@ public class AccountController {
                                       @RequestBody @Valid DetailsSaveVO vo) {
         boolean success = detailsService.saveAccountDetails(id, vo);
         return success ? RestBean.success() : RestBean.failure(400, "用户名已被其他用户使用，请重新输入");
+    }
+
+    /**
+     * 保存头像。
+     * 传入的是上传接口 POST /api/upload/image 返回的图片 URL —— 所以是先上传、再保存两步。
+     */
+    @PostMapping("/save-avatar")
+    public RestBean<Void> saveAvatar(@RequestAttribute(Const.ATTR_USER_ID) int id,
+                                     @RequestBody @Valid AvatarSaveVO vo) {
+        return utils.messageHandle(() -> service.modifyAvatar(id, vo.getAvatar()));
     }
 
     /** 修改绑定邮箱：需先往新邮箱申请验证码（type=modify） */

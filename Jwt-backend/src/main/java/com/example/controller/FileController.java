@@ -1,7 +1,7 @@
 package com.example.controller;
 
 import com.example.entity.RestBean;
-import com.example.utils.MinioUtils;
+import com.example.utils.S3StorageUtils;
 import com.example.utils.SnowflakeIdUtils;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -32,7 +32,7 @@ public class FileController {
     private static final long MAX_SIZE = 5 * 1024 * 1024;
 
     @Resource
-    MinioUtils minioUtils;
+    S3StorageUtils storageUtils;
 
     @Resource
     SnowflakeIdUtils snowflakeIdUtils;
@@ -45,7 +45,7 @@ public class FileController {
         if (file.getSize() > MAX_SIZE) {
             return RestBean.failure(400, "图片不能超过 5MB");
         }
-        if (!minioUtils.available()) {
+        if (!storageUtils.available()) {
             return RestBean.failure(400, "图片服务未就绪，请联系管理员");
         }
 
@@ -61,7 +61,7 @@ public class FileController {
         String objectName = LocalDate.now() + "/" + snowflakeIdUtils.nextId() + "." + ext;
 
         try {
-            String url = minioUtils.upload(objectName, file.getInputStream(),
+            String url = storageUtils.upload(objectName, file.getInputStream(),
                     file.getSize(), file.getContentType());
             return RestBean.success(url);
         } catch (Exception e) {

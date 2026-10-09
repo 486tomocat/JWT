@@ -17,6 +17,7 @@ import {
   Search,
   Setting,
   Star,
+  MagicStick,
   User,
   UserFilled
 } from "@element-plus/icons-vue";
@@ -25,6 +26,7 @@ import {
 import logo from "@/picture/changli.jpg";
 import NoticeBell from "@/components/forum/NoticeBell.vue";
 import ThemeToggle from "@/components/ThemeToggle.vue";
+import WeatherCard from "@/components/WeatherCard.vue";
 
 
 const store = useStore()
@@ -112,7 +114,10 @@ function doSearch() {
             <div>{{ store.user.email }}</div>
           </div>
           <el-dropdown>
-            <el-avatar src="https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png" />
+            <!-- 真实头像（原来写死了一个外链图片，换头像后这里一直不变） -->
+        <el-avatar :src="store.user.avatar">
+          {{ (store.user.username || '我').charAt(0) }}
+        </el-avatar>
             <template #dropdown>
               <el-dropdown-item>
                 <el-icon><Operation/></el-icon>
@@ -152,6 +157,10 @@ function doSearch() {
                 <el-menu-item index="/index/forum/collect">
                   <el-icon><Star/></el-icon>
                   <span>我的收藏</span>
+                </el-menu-item>
+                <el-menu-item index="/index/ai">
+                  <el-icon><MagicStick/></el-icon>
+                  <span>AI 智能体</span>
                 </el-menu-item>
               </el-sub-menu>
 
@@ -210,6 +219,9 @@ function doSearch() {
         <!-- 右栏：个人区（仅论坛路由） -->
         <el-aside v-if="showSidePanel" width="220px" class="side-panel">
           <el-scrollbar style="height: calc(100vh - 55px)">
+            <!-- 天气卡片：数据来自后端 /api/weather（Open-Meteo，免费无需 key） -->
+            <WeatherCard/>
+
             <div class="side-block">
               <el-button type="primary" style="width: 100%" @click="openPostEditor">
                 <el-icon><Plus/></el-icon>

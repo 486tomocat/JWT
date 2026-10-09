@@ -72,6 +72,11 @@ const router = createRouter({
                     name:'forum-collect',
                     component:() => import('@/views/forum/MyCollects.vue')
                 }, {
+                    // AI 智能体：独立整页（后续 AI 功能都往这一页加）
+                    path:'ai',
+                    name:'ai',
+                    component:() => import('@/views/ai/AiChat.vue')
+                }, {
                     // 管理后台：/api/admin/** 在后端限 ROLE_admin。
                     // 前端只用「菜单隐藏 + indexView 里的角色判断」收敛入口，真正的防线在后端。
                     path:'admin/user',

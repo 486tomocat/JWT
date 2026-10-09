@@ -54,6 +54,8 @@ public final class Const {
     public static final String FORUM_TOPIC_CREATE_COUNTER = "forum:topic:create:";
     /** 评论频率限制：每用户每分钟最多 N 条 */
     public static final String FORUM_TOPIC_COMMENT_COUNTER = "forum:topic:comment:";
+    /** AI 提问频率限制：AI 调用有成本，按用户限流 */
+    public static final String AI_CHAT_COUNTER = "ai:chat:counter:";
 
     private Const() {
         // 常量类不允许实例化
