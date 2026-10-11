@@ -29,18 +29,26 @@ spring:
 
   # Spring AI：AI 问答助手。
   # 🔑 换服务商只改这几行 —— 它们都兼容 OpenAI 协议：
-  #     DeepSeek  : base-url=https://api.deepseek.com          model=deepseek-chat
-  #     阿里百炼   : base-url=https://dashscope.aliyuncs.com/compatible-mode  model=qwen-plus
-  #     Ollama本地 : base-url=http://localhost:11434/v1        model=qwen2.5
-  #      OpenAI    : base-url=https://api.openai.com            model=gpt-4o-mini
+  #
+  # ⚠️ base-url 末尾的 /v1 不能省！
+  #    Spring AI 2.x 底层换成了 OpenAI 官方 Java SDK，它**不会**自动补 /v1，
+  #    给什么就请求什么。省掉 /v1 会直接 404（本项目踩过：
+  #    NotFoundException: 404: Unknown）。
+  #
+  #     DeepSeek  : base-url=https://api.deepseek.com/v1          model=deepseek-chat
+  #     阿里百炼   : base-url=https://dashscope.aliyuncs.com/compatible-mode/v1  model=qwen-plus
+  #     Ollama本地 : base-url=http://localhost:11434/v1           model=qwen2.5
+  #      OpenAI    : base-url=https://api.openai.com/v1            model=gpt-4o-mini
+  #
   # 真实 key 放在 application-local.yml（不进版本库）。
   ai:
     openai:
       # 占位值：没有 key 也能正常启动，只有真正调用 AI 时才会失败
       api-key: ${AI_API_KEY:placeholder-set-your-key-in-local-yml}
 
-      # 当前用的是**阿里百炼**（DashScope）的 OpenAI 兼容端点
-      base-url: ${AI_BASE_URL:https://dashscope.aliyuncs.com/compatible-mode}
+      # 当前用的是**阿里百炼**（DashScope）的 OpenAI 兼容端点。
+      # chat 在 /v1/chat/completions，embedding 在 /v1/embeddings —— 同一个 base-url。
+      base-url: ${AI_BASE_URL:https://dashscope.aliyuncs.com/compatible-mode/v1}
 
       chat:
         options:

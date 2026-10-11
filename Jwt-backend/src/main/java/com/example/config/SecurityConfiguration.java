@@ -81,6 +81,13 @@ public class SecurityConfiguration {
         response.setContentType("application/json;charset=utf-8");
         User user = (User) authentication.getPrincipal();
         Account account = service.findAccountByNameOrEmail(user.getUsername());
+        // 防御性判空：正常路径下走不到这里（loadUserByUsername 查不到会抛
+        // UsernameNotFoundException，认证根本不会成功）。但"认证通过"到"这里查库"
+        // 之间存在时间窗口，账号若恰好在此刻被删除，下面 account.isBanned() 就会 NPE。
+        if (account == null) {
+            response.getWriter().write(RestBean.unauthorized("账户不存在，请重新注册").asJsonString());
+            return;
+        }
         // 阶段 3：被封禁的账号连令牌都拿不到（已经拿到的那张由 JwtAuthorizeFilter 拦截）
         if (account.isBanned()) {
             response.getWriter().write(RestBean.forbidden("登录失败，此账户已被封禁").asJsonString());

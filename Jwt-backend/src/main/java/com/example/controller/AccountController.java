@@ -44,6 +44,15 @@ public class AccountController {
     @GetMapping("/info")
     public RestBean<AccountVO> info(@RequestAttribute(Const.ATTR_USER_ID) int id) {
         Account account = service.findAccountById(id);
+        if (account == null) {
+            // 令牌签名有效，但用户已经不存在了（例如开发期重建了数据库、
+            // 或账号被物理删除）。这时应视为「登录失效」，返回 401 让前端跳登录页。
+            //
+            // 为什么不能直接往下走：account 为 null 时下一行的
+            // asViewObject() 会抛 NullPointerException，最终变成 500。
+            // 前端拿到 500 只会显示「服务器错误」，不知道该重新登录。
+            return RestBean.unauthorized("登录已失效，请重新登录");
+        }
         return RestBean.success(account.asViewObject(AccountVO.class));
     }
 

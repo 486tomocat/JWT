@@ -28,6 +28,21 @@
 --   5. AI 额度（阶段 5）
 -- =====================================================================
 
+-- ⚠️ 这一行必须放在最前面，否则中文会变乱码。
+--
+-- 原因：MySQL 官方镜像的 entrypoint 执行 /docker-entrypoint-initdb.d/*.sql 时，
+--       用的是默认连接字符集 —— 实测是 **latin1**（character_set_client=latin1）。
+--       而本文件是 UTF-8 编码，于是脚本里的「日常闲聊」四个字
+--       （字节 E697A5 E5B8B8 E997B2 E8818A）被当成 8 个 latin1 字符读进去，
+--       再按 utf8mb4 存表 —— 这叫"双重编码"，查出来就是 æ—¥å¸¸é—²èŠ‚。
+--
+-- SET NAMES utf8mb4 明确告诉服务端："客户端发来的字节是 utf8mb4 编码"，
+-- 从这条语句之后的所有 INSERT / 注释都按 UTF-8 处理。
+--
+-- 用 Navicat 手工执行时不会有这个问题（Navicat 默认就用 utf8mb4），
+-- 只有容器自动初始化会踩，属于典型的"本地看不出、一部署就暴露"。
+SET NAMES utf8mb4;
+
 CREATE DATABASE IF NOT EXISTS `template` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
 USE `template`;
 

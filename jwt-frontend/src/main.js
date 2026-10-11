@@ -6,10 +6,19 @@ import { createPinia} from "pinia";
 
 import 'element-plus/theme-chalk/dark/css-vars.css'
 
-// ElMessageBox 是命令式 API（ElMessageBox.confirm(...)），不走模板组件那条自动按需引入的路径；
-// 而代码里又是显式 import 的，等于绕开了 resolver 的样式注入 —— 结果确认框一点 CSS 都没有：
-// 不居中（缺 .el-overlay-message-box）、没有遮罩和背景（缺 .el-overlay/.el-message-box 的 background-color）。
-// 这里显式补上。将来再用别的命令式组件（如 ElNotification）时照此加一行。
+// 【命令式组件的样式要手工补】
+//
+// ElMessage / ElMessageBox / ElNotification 这类是**命令式 API**
+// （ElMessage.success(...)、ElMessageBox.confirm(...)），它们不走模板组件那条
+// 自动按需引入的路径；而代码里又是显式 import 的，等于绕开了 ElementPlusResolver
+// 的样式注入 —— 结果组件一点 CSS 都没有。
+//
+// 典型表现：
+//   ElMessage     缺 .el-message   → 少了 position:fixed，提示条掉到页面底部
+//   ElMessageBox  缺 .el-overlay*  → 弹窗不居中、没有遮罩和背景
+//
+// 将来再用别的命令式组件（如 ElNotification）时，照此加一行对应样式即可。
+import 'element-plus/theme-chalk/el-message.css'
 import 'element-plus/theme-chalk/el-message-box.css'
 
 // 默认用相对路径：请求打到当前源（dev 时是 vite 的 5173），
