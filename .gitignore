@@ -37,9 +37,11 @@ application-local.yml
 # ── 阶段备份 ──
 _backup_phase3/
 
-# ── 文档与笔记（不参与构建）──
-docs/
-补全讲解-阶段3.md
+# ── 文档与笔记 ──
+# ⚠️ 只忽略 AI 工具产物（brainstorm 画布 / 计划 / 规格）。
+#    docs/agents/（技能套件配置）和 docs/adr/（架构决策记录）要进版本库 ——
+#    前者是工程技能读的配置，后者是项目决策的长期记录，都不能只在本地存在。
+docs/superpowers/
 补全进度.md
 
 # ── 本地测试脚本 ──
